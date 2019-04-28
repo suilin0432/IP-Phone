@@ -2,10 +2,12 @@ import socket
 import collections
 from chardet import detect
 import time
+import threading
 
 # Client只用来发送数据并不进行数据的接收
-class TCPClient(object):
+class TCPClient(threading.Thread):
     def __init__(self, S_HOST="10.164.255.229", S_PORT=4399, C_HOST="10.164.255.229", C_PORT=44444, RECV_SIZE = 1024, maxNumber = 1, maxLength = 1000, waitTime=0.02):
+        threading.Thread.__init__(self)
         self.S_HOST = S_HOST
         self.S_PORT = S_PORT
         self.C_HOST = C_HOST
@@ -15,7 +17,6 @@ class TCPClient(object):
         self.maxNumber = maxNumber
         self.maxLength = maxLength
         self.waitTime = waitTime
-
         self.STATE_CONFIG()
 
     def STATE_CONFIG(self):
@@ -43,6 +44,9 @@ class TCPClient(object):
         self.buffer = collections.deque()
         self.SUCCESS = 0
         self.FAIL = 0
+
+    def run(self):
+        self.connect()
 
     def connect(self):
         S_ADDR = (self.S_HOST, self.S_PORT)

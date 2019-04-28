@@ -1,10 +1,12 @@
 import socket
 import collections
 from chardet import detect
+import threading
 
 # Service进程只用来进行消息的接受, 并不负责消息的发送
-class TCPService(object):
+class TCPService(threading.Thread):
     def __init__(self, HOST = "10.164.255.229", PORT = 4399, RECV_SIZE = 1024, maxNumber = 1, maxLength = 1000):
+        threading.Thread.__init__(self)
         self.HOST = HOST
         self.PORT = PORT
         self.ADDR = (HOST, PORT)
@@ -50,6 +52,9 @@ class TCPService(object):
         self.FAIL = 0
         self.STATE = "WAITING"
 
+    def run(self):
+        self.listen()
+
     def listen(self):
         # AF_INET 表示 针对 IPV4
         # SOCK_STREAM 表示针对 面向流的TCP协议
@@ -63,6 +68,7 @@ class TCPService(object):
             print("已经和 {0} 产生了连接, 可以开始通话了!!".format(addr))
             self.connectEvent(client, addr)
         self.tcpServiceSock.close()
+
     def connectEvent(self, client, addr):
         # 进行声音的录制 存入 buffer 中 然后 buffer 中的数据会被外部定时的取出然后播放
         self.STATE = "CONNECTING"
