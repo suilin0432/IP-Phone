@@ -24,6 +24,7 @@ class AudioListener(threading.Thread):
             time.sleep(0.1)
         data = None
         # print("Listener", self.Service.STATE)
+        print("AudioListener 开始")
         while self.Service.STATE == "CONNECTED":
             if len(self.Service.queue):
                 # time.sleep(0.1)

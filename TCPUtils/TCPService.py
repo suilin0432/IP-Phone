@@ -7,7 +7,7 @@ import time
 # 纯粹的 TCP 的通信.
 # Service进程只用来进行消息的接受, 并不负责消息的发送
 class TCPService(threading.Thread):
-    def __init__(self, HOST = "127.0.0.1", PORT = 44442, RECV_SIZE = 1024, maxNumber = 1, maxLength = 1000):
+    def __init__(self, HOST = "127.0.0.1", PORT = 44445, RECV_SIZE = 1024, maxNumber = 1, maxLength = 1000, type="TCP"):
         threading.Thread.__init__(self)
         self.HOST = HOST
         self.PORT = PORT
@@ -22,6 +22,7 @@ class TCPService(threading.Thread):
 
         self.SUCCESS = 0
         self.FAIL = 0
+        self.TYPE = type
 
         self.STATE_CONFIG()
 
@@ -31,14 +32,16 @@ class TCPService(threading.Thread):
         self.EVENTMAP = {
             "ending":self.finishing,
             "start":self.starting,
+            # "success":self.success,
         }
 
     def starting(self):
         # 发送建立连接的信息
-        time.sleep(0.01)
-        self.STATE = "CONNECTED"
-        print("Service 发送start信号")
-        self.client.send(bytes("start", "utf-8"))
+        if self.STATE == "CONNECTING":
+            time.sleep(0.01)
+            self.STATE = "CONNECTED"
+            # print("Service 发送start信号")
+            self.client.send(bytes("start", "utf-8"))
 
     def finishing(self):
         self.client.close()
@@ -76,6 +79,35 @@ class TCPService(threading.Thread):
     def connectEvent(self, client, addr):
         # 进行声音的录制 存入 queue 中 然后 queue 中的数据会被外部定时的取出然后播放
         self.STATE = "CONNECTING"
+        # 首先接收start信号然后返回
+        data = client.recv(self.RECV_SIZE)
+        t = detect(data)["encoding"]
+        if t == "ascii":
+            data = data.decode(t)
+        else:
+            print("Service Client start信号接受失败")
+            client.close()
+            return
+        if data == "start":
+            time.sleep(0.01)
+            self.EVENTMAP["start"]()
+        else:
+            self.EVENTMAP["ending"]()
+            return
+
+        if self.TYPE == "TCP" or self.TYPE == "tcp":
+            print("开始TCP接收数据")
+            self.communication(client, addr)
+        elif self.TYPE == "UDP" or self.TYPE == "udp":
+            self.control(client)
+
+
+    def control(self, client):
+        while True:
+            data = client.recv(self.RECV_SIZE)
+
+
+    def communication(self, client, addr):
         while True:
             if self.STATE == "WAITING":
                 break
@@ -110,6 +142,5 @@ class TCPService(threading.Thread):
                 # 返回一个接收信息
                 # print("Service 返回确认信息 ok")
                 client.send(bytes("ok", "utf-8"))
-
 
 
