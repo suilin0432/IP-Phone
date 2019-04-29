@@ -6,7 +6,7 @@ import threading
 
 # Client只用来发送数据并不进行数据的接收
 class TCPClient(threading.Thread):
-    def __init__(self, S_HOST="10.164.255.229", S_PORT=4399, C_HOST="10.164.255.229", C_PORT=44444, RECV_SIZE = 1024, maxNumber = 1, maxLength = 1000, waitTime=0.02):
+    def __init__(self, S_HOST="127.0.0.1", S_PORT=44442, C_HOST="127.0.0.1", C_PORT=44443, RECV_SIZE = 1024, maxNumber = 1, maxLength = 1000, waitTime=0.02):
         threading.Thread.__init__(self)
         self.S_HOST = S_HOST
         self.S_PORT = S_PORT
@@ -23,11 +23,10 @@ class TCPClient(threading.Thread):
         self.STATE = "WAITING"
         self.EVENTMAP = {
             "ending":self.finishing,
-            "start":self.start,
+            "start":self.starting,
         }
 
-    def start(self):
-        self.STATE = "CONNECTED"
+    def starting(self):
         # 发送建立连接的信息
         self.client.send(bytes("start", "utf-8"))
 
@@ -58,13 +57,16 @@ class TCPClient(threading.Thread):
         self.STATE = "CONNECTING"
 
         # 首先发送start状态
+        # print("Client 发送 start")
         client.send(bytes("start", "utf-8"))
         # 等待start的返回
         data = client.recv(self.RECV_SIZE)
         t = detect(data)["encoding"]
         data = data.decode(t)
         if data == "start":
-            self.EVENTMAP[data]()
+            # print("Client 接受到 start")
+            time.sleep(0.01)
+            self.STATE = "CONNECTED"
         else:
             # 如果收到的不是 start 那么就发送 ending 结束吧...
             self.EVENTMAP["ending"]()
@@ -78,16 +80,20 @@ class TCPClient(threading.Thread):
                 break
             if not self.queue:
                 time.sleep(self.waitTime)
+                # print("TCPClient waiting")
                 continue
             # 有数据就发送数据
             data = self.queue.popleft()
             # 因为音频就是二进制数据, 发送就好了
             client.send(data)
+            # print("Client 发送数据, 数据长度: {0}".format(len(data)))
             # 然后等待确认数据回来
             data = client.recv(self.RECV_SIZE)
             if not data:
+                time.sleep(self.waitTime)
                 continue
             t = detect(data)["encoding"]
             data = data.decode(t)
+            # print("Client 接收到确认数据 {0}".format(data))
             if data == "ending":
                 self.EVENTMAP["ending"]()
