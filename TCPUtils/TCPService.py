@@ -142,5 +142,3 @@ class TCPService(threading.Thread):
                 # 返回一个接收信息
                 # print("Service 返回确认信息 ok")
                 client.send(bytes("ok", "utf-8"))
-
-
