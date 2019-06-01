@@ -51,8 +51,8 @@ class TCPService(threading.Thread):
         self.STATE = "WAITING"
 
     # 主动关闭时候(点击挂断按钮的时候)
-    def closing(self, client, addr):
-        self.client.send("ending")
+    def closing(self):
+        self.client.send(bytes("ending","utf-8"))
         self.client.close()
         self.queue = collections.deque()
         self.SUCCESS = 0
@@ -73,7 +73,7 @@ class TCPService(threading.Thread):
             client, addr = self.tcpServiceSock.accept()
             self.client = client
             # print("已经和 {0} 产生了连接, 可以开始通话了!!".format(addr))
-            self.connectEvent(client, addr)
+            self.connectEvent(self.client, addr)
         self.tcpServiceSock.close()
 
     def connectEvent(self, client, addr):

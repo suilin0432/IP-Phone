@@ -41,8 +41,8 @@ class TCPClient(threading.Thread):
         # UDP 数据传递的时候返回TCP连接不成功使得无法进行信息的建立
 
     # 主动关闭时候(点击挂断按钮的时候)
-    def closing(self, client, addr):
-        self.client.send("ending")
+    def closing(self):
+        self.client.send(bytes("ending","utf-8"))
         self.client.close()
         self.buffer = collections.deque()
         self.SUCCESS = 0
@@ -55,25 +55,24 @@ class TCPClient(threading.Thread):
     def connect(self):
         S_ADDR = (self.S_HOST, self.S_PORT)
         C_ADDR = (self.C_HOST, self.C_PORT)
-        client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        client.bind(C_ADDR)
-        client.connect(S_ADDR)
-        self.client = client
+        self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.client.bind(C_ADDR)
+        self.client.connect(S_ADDR)
         self.STATE = "CONNECTING"
 
         # 首先发送start状态 / success状态
         print("Client 发送 start")
         time.sleep(1)
-        client.send(bytes("start", "utf-8"))
+        self.client.send(bytes("start", "utf-8"))
         # 等待start的返回
-        data = client.recv(self.RECV_SIZE)
+        data = self.client.recv(self.RECV_SIZE)
         t = detect(data)["encoding"]
         if t == "ascii":
             data = data.decode(t)
         else:
             #认为连接失败
             print("Client 接收 start 连接信号失败")
-            client.close()
+            self.client.close()
             return
         if data == "start":
             print("Client 接受到 start")
@@ -87,10 +86,10 @@ class TCPClient(threading.Thread):
         # 如果
         if self.TYPE == "TCP" or self.TYPE == "tcp":
             print("开始TCP发送数据")
-            self.communication(client)
+            self.communication(self.client)
         elif self.TYPE == "UDP" or self.TYPE == "udp":
-            # 如果是UDP的话就开始发送数据了, client 占用但是并不进行任何传输, 用来进行信号控制??, 所以还是要进行连接的, 但是并不会主动释放, 定时发送一个连接保持包
-            self.control(client)
+            # 如果是UDP的话就开始发送数据了, self.client 占用但是并不进行任何传输, 用来进行信号控制??, 所以还是要进行连接的, 但是并不会主动释放, 定时发送一个连接保持包
+            self.control(self.client)
 
 
     def control(self, client):
