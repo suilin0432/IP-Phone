@@ -6,7 +6,7 @@ import time
 
 # 用UDP进行信息的接收
 class UDPService(threading.Thread):
-    def __init__(self, HOST = "127.0.0.1", PORT = 44444, RECV_SIZE = 1024, maxNumber = 1, maxLength = 1000):
+    def __init__(self, HOST = "127.0.0.1", PORT = 44447, RECV_SIZE = 1024, maxNumber = 1, maxLength = 1000):
         threading.Thread.__init__(self)
         self.HOST = HOST
         self.PORT = PORT
